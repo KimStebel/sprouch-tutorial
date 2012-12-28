@@ -3,6 +3,8 @@ package sprouch.tutorial
 import spray.json.JsValue
 import spray.json.JsonFormat
 import spray.json.JsString
+import scala.concurrent.duration.Duration
+import scala.concurrent.Await
 
 object Schemaless extends App {
   import sprouch._
@@ -22,6 +24,7 @@ object Schemaless extends App {
   
   import akka.actor.ActorSystem
   val actorSystem = ActorSystem("myActorSystem")
+  import actorSystem.dispatcher
   val config = Config(actorSystem)
   val couch = Couch(config)
   val future = for {
@@ -36,8 +39,6 @@ object Schemaless extends App {
     println(gotten)
     
   }
-  import akka.util.Duration
-  import akka.dispatch.Await
   val duration = Duration("10 seconds")
   Await.result(future, duration)
   actorSystem.shutdown()

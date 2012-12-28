@@ -1,6 +1,9 @@
    /* Now to the actual code. First we need to import sprouch._ as well as sprouch.JsonProtocol._,
    which contains methods to convert Scala types from and to JSON.
  */
+import scala.concurrent.duration.Duration
+import scala.concurrent.Await
+
 object Main extends App {
   import sprouch._
   import sprouch.JsonProtocol._
@@ -23,6 +26,7 @@ object Main extends App {
    */
   import akka.actor.ActorSystem
   val actorSystem = ActorSystem("myActorSystem")
+  import actorSystem.dispatcher
   val config = Config(actorSystem)
   /* Here is a different configuration that would work with cloudant.
    */
@@ -85,8 +89,8 @@ Second version: Document(
        Finally we block and wait for the result to be computed. Again, this is something you might not
        want to do in a real application.
      */
-  import akka.util.Duration
-  import akka.dispatch.Await
+  /*import akka.util.Duration
+  import akka.dispatch.Await*/
   val duration = Duration("10 seconds")
   Await.result(future, duration)
   actorSystem.shutdown()
