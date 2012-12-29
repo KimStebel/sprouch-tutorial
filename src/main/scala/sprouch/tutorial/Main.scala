@@ -3,6 +3,7 @@
  */
 object Main extends App {
   import sprouch._
+  import sprouch.dsl._
   import sprouch.JsonProtocol._
   /* Suppose we have a Scala class used to represent products in an online store.*/
   case class ShopItem(
@@ -36,35 +37,42 @@ object Main extends App {
   /* Then we create a new couch object with this config.
    */
   val couch = Couch(config)
-  /* Now comes the interesting part. Since sprouch is an asynchronous library, all its methods return futures.
+  /* Now comes the interesting part. 
+     We get a reference to the items database or create it, if it does not already exist. We make the val implicit
+     so we don't have to pass it explicitly to ever method that creates/reads/updates documents in the database. */
+  implicit val db = couch.getDb("items") recoverWith { case _ =>
+    couch.createDb("items")
+  }
+  /* We create a new product to put into our database */
+  val phone = ShopItem("Samsung S5", 500, Some("Shiny new smartphone"))
+  /* Since sprouch is an asynchronous library, all its methods return futures.
      We use a for comprehension to chain these futures together.
    */
   val future = for {
-    /* We get a reference to the items database or create it, if it does not already exist. */
-    db <- couch.getDb("items") recoverWith { case _ =>
-      couch.createDb("items")
-    }
-    /* We create a new product to put into our database */
-    phone = ShopItem("Samsung S5", 500, Some("Shiny new smartphone"))
-    /* ...and add the phone to the database. */
-    phoneDoc <- db.createDoc(phone)
-    /* createDoc gives us a RevedDocument[Product]. The RevedDocument contains an ID created by CouchDB (you can
-       also pass your own ID to createDoc), the document revision returned by CouchDB and of course the phone object.
+    /* First we add the phone to the database. */
+    phoneDoc <- phone.create
+    /* The create method gives us a RevedDocument[ShopItem]. The RevedDocument contains an ID created by CouchDB (you can
+       also pass your own ID to create), the document revision returned by CouchDB and of course the phone object.
        
-       Let's say we want to reduce the phone's price. We create a new Document by calling the updateData method.
-       It takes a function that gets passed the old ShopItem and returns a new one. Since we're dealing with a
+       Let's say we want to reduce the phone's price. Since we're dealing with a
        case class, we can use its copy method to update the price and the description.
      */
-    reduced = phoneDoc.updateData(_.copy(
+    reduced = phone.copy(
         price = 400,
         description = Some("Shiny new smartphone. Now 20% off!")
-    ))
-    /* Then we call updateDoc to make the changes in the database. */
-    updatedPhoneDoc <- db.updateDoc(reduced)
+    )
+    /* Then we persist the changes in the database. */
+    updatedPhoneDoc <- phoneDoc := reduced
+    /* To read a document, there are several options. If you already have a document and just want to
+       get the most recent revision, you can pass the old document to the get method.*/
+    current <- get(phoneDoc)
+     /* Or you can simply get the document by its ID.
+       In that case you have to specify the type of the document explicitly. */
+    byId <- get[ShopItem](phoneDoc.id)
     /* If we don't want to sell this phone anymore, we can delete it from the database. Note that we need to have the
        latest version of the document, because deletion will fail if the revision is not current.
      */
-    _ <- db.deleteDoc(updatedPhoneDoc)
+    _ <- current.delete
   /* We output the first and second version of the phone document. */
   } yield {
     println("First version: " + phoneDoc)
@@ -83,7 +91,7 @@ Second version: Document(
                                        Now 20% off!)))
        </pre><p>
        Finally we block and wait for the result to be computed. Again, this is something you might not
-       want to do in a real application.
+       want to do in a real application. If you want your methods to block, you can just use sprouch's blocking API.
      */
   import akka.util.Duration
   import akka.dispatch.Await
@@ -91,5 +99,4 @@ Second version: Document(
   Await.result(future, duration)
   actorSystem.shutdown()
 }
-/* That's it, we're done! In the next tutorial, I will write about using views.
-  If you have any questions, please leave a comment. */
+/* That's it, we're done! If you have any questions, please leave a comment. */
