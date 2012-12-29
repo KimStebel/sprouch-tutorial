@@ -11,5 +11,5 @@ resolvers += "sprouch repo" at
              "http://kimstebel.github.com/sprouch/repository"
 
 /* Now sbt will be able to resolve our dependency on sprouch. */
-libraryDependencies += "sprouch" % "sprouch_2.10" % "0.5.6"
+libraryDependencies += "sprouch" % "sprouch_2.10" % "0.5.7"
 
