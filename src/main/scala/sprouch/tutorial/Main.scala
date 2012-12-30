@@ -1,26 +1,30 @@
-   /* Now to the actual code. First we need to import sprouch._ as well as sprouch.JsonProtocol._,
-   which contains methods to convert Scala types from and to JSON.
+   /* Now to the actual code. First you need a few imports:
+      <tt>sprouch</tt> contains the main classes Couch and Database.
+      <tt>sprouch.dsl</tt> contains implicit conversions that allow 
+      you to use a shorter, more convenient syntax.
+      Finally, <tt>sprouch.JsonProtocol</tt> contains methods to convert Scala types from and to JSON.
  */
 object Main extends App {
   import sprouch._
   import sprouch.dsl._
   import sprouch.JsonProtocol._
-  /* Suppose we have a Scala class used to represent products in an online store.*/
+  /* Suppose you have a Scala class used to represent products in an online store.*/
   case class ShopItem(
       name: String,
       price: BigDecimal,
       description:Option[String])
-  /* We would like to store it in CouchDB. Since CouchDB stores its data as JSON documents,
-     we first need a way to convert products to and from JSON. Since we defined Sh opItem as a case class,
-     there is an easy way to do this. We call jsonFormat3(Product) to get a JsonFormat[Product]. JsonFormat
-     is a just trait with a read and a write method, so it is easy to implement one yourself if needed.
+  /* You would like to store it in CouchDB. Since CouchDB stores its data as JSON documents,
+     you first need a way to convert products to and from JSON. Since you defined ShopItem as a case class,
+     there is an easy way to do this. You call <tt>jsonFormat3(ShopItem)</tt> to get a <tt>JsonFormat[ShopItem]</tt>.
+     JsonFormat is a just trait with a read and a write method, so you can easily implement one yourself if needed.
    */
   implicit val productFormat = jsonFormat3(ShopItem)
-  /* Now we need to connect to CouchDB. First we create a Config object.
+  /* Now you need to connect to CouchDB. First you create a Config object.
      The config object takes an ActorSystem and any configuration settings needed to connect to CouchDB.
-     In this tutorial, we create our own actor system. In a real application you will probably already have one configured.
-     If you don't specify any other parameters, sprouch asseumes CouchDB is running on localhost port 5894, does not
-     require a username or password and uses plain HTTP rather than HTTPS.
+     In this tutorial, an actor system is created just to pass it to Sprouch. In a real application you will
+     probably already have one configured.
+     If you don't specify any other parameters, sprouch assumes CouchDB is running on localhost, port 5894, does not
+     require a username or password and uses HTTP and not HTTPS.
    */
   import akka.actor.ActorSystem
   val actorSystem = ActorSystem("myActorSystem")
@@ -38,42 +42,43 @@ object Main extends App {
    */
   val couch = Couch(config)
   /* Now comes the interesting part. 
-     We get a reference to the items database or create it, if it does not already exist. We make the val implicit
-     so we don't have to pass it explicitly to ever method that creates/reads/updates documents in the database. */
+     You get a reference to the items database or create it, if it does not already exist. You make the val implicit
+     so you don't have to pass it to every method that creates/reads/updates documents in the database. */
   implicit val db = couch.getDb("items") recoverWith { case _ =>
     couch.createDb("items")
   }
-  /* We create a new product to put into our database */
+  /* You create a new product to put into our database */
   val phone = ShopItem("Samsung S5", 500, Some("Shiny new smartphone"))
-  /* Since sprouch is an asynchronous library, all its methods return futures.
-     We use a for comprehension to chain these futures together.
+  /* Since Sprouch is an asynchronous library, all its methods return futures.
+     You can use a for comprehension to chain these futures together.
    */
   val future = for {
-    /* First we add the phone to the database. */
+    /* First you add the phone to the database. */
     phoneDoc <- phone.create
-    /* The create method gives us a RevedDocument[ShopItem]. The RevedDocument contains an ID created by CouchDB (you can
-       also pass your own ID to create), the document revision returned by CouchDB and of course the phone object.
+    /* The create method gives us a <tt>RevedDocument[ShopItem]</tt>. The RevedDocument contains an automatically
+       generated ID (you canalso pass your own ID to <tt>create</tt>), the document revision returned by CouchDB
+       and of course the phone object.
        
-       Let's say we want to reduce the phone's price. Since we're dealing with a
-       case class, we can use its copy method to update the price and the description.
+       Let's say you want to reduce the phone's price. Since you have a
+       case class, you can use its copy method to update the price and the description.
      */
     reduced = phone.copy(
         price = 400,
         description = Some("Shiny new smartphone. Now 20% off!")
     )
-    /* Then we persist the changes in the database. */
+    /* Then you persist the changes in the database. */
     updatedPhoneDoc <- phoneDoc := reduced
     /* To read a document, there are several options. If you already have a document and just want to
-       get the most recent revision, you can pass the old document to the get method.*/
-    current <- get(phoneDoc)
-     /* Or you can simply get the document by its ID.
-       In that case you have to specify the type of the document explicitly. */
+       get the most recent revision, you can pass the old document to the <tt>get</tt> method.*/
+    latest <- get(phoneDoc)
+     /* Or you can get the document by its ID.
+       In this case you have to specify the type of the document. */
     byId <- get[ShopItem](phoneDoc.id)
-    /* If we don't want to sell this phone anymore, we can delete it from the database. Note that we need to have the
+    /* If you don't want to sell this phone anymore, you can delete it from the database. Note that you need to have the
        latest version of the document, because deletion will fail if the revision is not current.
      */
-    _ <- current.delete
-  /* We output the first and second version of the phone document. */
+    _ <- latest.delete
+  /* This outputs the first and second version of the phone document. */
   } yield {
     println("First version: " + phoneDoc)
     println("Second version: " + updatedPhoneDoc)
@@ -90,8 +95,8 @@ Second version: Document(
     data: ShopItem(Samsung S5,400,Some(Shiny new smartphone.
                                        Now 20% off!)))
        </pre><p>
-       Finally we block and wait for the result to be computed. Again, this is something you might not
-       want to do in a real application. If you want your methods to block, you can just use sprouch's blocking API.
+       Finally you wait for the result to be computed. Again, this is something you probably don't
+       want to do in a real application. If you want your methods to block, you can use Sprouch's synchronous API.
      */
   import akka.util.Duration
   import akka.dispatch.Await
@@ -99,4 +104,4 @@ Second version: Document(
   Await.result(future, duration)
   actorSystem.shutdown()
 }
-/* That's it, we're done! If you have any questions, please leave a comment. */
+/* That's it, you're done! If you have any questions, please leave a comment. */
