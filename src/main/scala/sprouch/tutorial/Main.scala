@@ -16,7 +16,7 @@ object Main extends App {
   /* You would like to store it in CouchDB. Since CouchDB stores its data as JSON documents,
      you first need a way to convert products to and from JSON. Since you defined ShopItem as a case class,
      there is an easy way to do this. You call <tt>jsonFormat3(ShopItem)</tt> to get a <tt>JsonFormat[ShopItem]</tt>.
-     JsonFormat is a just trait with a read and a write method, so you can easily implement one yourself if needed.
+     JsonFormat is a just trait with a read and a write method, so you can easily implement it yourself, if needed.
    */
   implicit val productFormat = jsonFormat3(ShopItem)
   /* Now you need to connect to CouchDB. First you create a Config object.
@@ -38,8 +38,7 @@ object Main extends App {
       userPass=Some("someone" -> "password"),
       https=true
   )
-  /* Then we create a new couch object with this config.
-   */
+  /* Then we create a new couch object with this config.*/
   val couch = Couch(config)
   /* Now comes the interesting part. 
      You get a reference to the items database or create it, if it does not already exist. You make the val implicit
