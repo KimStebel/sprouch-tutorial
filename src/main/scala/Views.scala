@@ -6,7 +6,7 @@
  */
 object ViewsTutorial extends App with Helpers {
   import sprouch._, dsl._, JsonProtocol._
-  import akka.dispatch.{Await, Future}, akka.util.Duration
+  import scala.concurrent.{Await, Future}, scala.concurrent.duration.Duration
   /*First you will need some test data to run your views on. The following creates a sequence of ShopItems
    *  with prices between 100 and 1000.*/
   val items = for (i <- 1 to 10)
