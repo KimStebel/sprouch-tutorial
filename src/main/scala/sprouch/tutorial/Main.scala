@@ -27,6 +27,7 @@ object Main extends App {
      require a username or password and uses HTTP and not HTTPS.
    */
   import akka.actor.ActorSystem
+  import scala.concurrent.ExecutionContext.Implicits.global
   val actorSystem = ActorSystem("myActorSystem")
   val config = Config(actorSystem)
   /* Here is a different configuration that would work with cloudant.
@@ -97,8 +98,8 @@ Second version: Document(
        Finally you wait for the result to be computed. Again, this is something you probably don't
        want to do in a real application. If you want your methods to block, you can use Sprouch's synchronous API.
      */
-  import akka.util.Duration
-  import akka.dispatch.Await
+  import scala.concurrent.duration.Duration
+  import scala.concurrent.Await
   val duration = Duration("10 seconds")
   Await.result(future, duration)
   actorSystem.shutdown()

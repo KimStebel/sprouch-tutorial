@@ -4,13 +4,15 @@
    <p>This tutorial is written for Scala 2.9, but you can also use 2.10. Here is the build.sbt file:*/
 name := "sprouch-tutorial"
 
-scalaVersion := "2.9.2"
+scalaVersion := "2.10.2"
 
 /* Sprouch is available from its own repository on Github, so you need to add it to your resolvers. */
 resolvers += "sprouch repo" at
              "http://kimstebel.github.com/sprouch/repository"
 
+resolvers += "spray repo" at "http://repo.spray.io"
+
 /* Now sbt will be able to resolve our dependency on sprouch. */
-libraryDependencies += "sprouch" % "sprouch_2.9.2" % "0.5.11"
+libraryDependencies += "sprouch" %% "sprouch" % "0.5.11"
 /* If you want to use 2.10, just replace 2.9.2 with 2.10. */
 

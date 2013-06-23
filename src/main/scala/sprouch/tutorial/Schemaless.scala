@@ -21,6 +21,7 @@ object Schemaless extends App {
   implicit val productFormat = jsonFormat2(PartialDoc)
   
   import akka.actor.ActorSystem
+  import scala.concurrent.ExecutionContext.Implicits.global
   val actorSystem = ActorSystem("myActorSystem")
   val config = Config(actorSystem)
   val couch = Couch(config)
@@ -36,8 +37,8 @@ object Schemaless extends App {
     println(gotten)
     
   }
-  import akka.util.Duration
-  import akka.dispatch.Await
+  import scala.concurrent.duration.Duration
+  import scala.concurrent.Await
   val duration = Duration("10 seconds")
   Await.result(future, duration)
   actorSystem.shutdown()

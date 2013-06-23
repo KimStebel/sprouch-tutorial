@@ -2,9 +2,9 @@ import sprouch._
 import sprouch.dsl._
 import sprouch.JsonProtocol._
 import akka.actor.ActorSystem
-import akka.dispatch.Future
-import akka.dispatch.Await
-import akka.util.Duration
+import scala.concurrent.Future
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 trait Helpers {
   
